@@ -1,5 +1,5 @@
 # Catmon
-Catmon is a simple cat flap monitor application written in pythpn. It takes a picture when a cat enters through the cat flap, uploads the picture to google drive and tweets it.
+Catmon is a simple cat flap monitor application written in python. It takes a picture when a cat enters through the cat flap, uploads the picture to google drive and tweets it.
 
 # Set-up
 ![Catmon Solution Overview](https://lh6.googleusercontent.com/-Qu-Tn-N6oao/VPs_fvNICHI/AAAAAAAAAE0/_0T2GnQsqpw/w916-h553-no/catmon%2Bsolution%2Boverview.jpg)
