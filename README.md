@@ -9,7 +9,7 @@ See [Terry's blog about catmon](http://terrydolan.blogspot.com/2015/03/catmon.ht
 # Run catmon
 Catmon needs root privilege because it accesses the raspberry pi's gpio:
 ```
-pi@raspberrypi ~/project-catmon $ **sudo python catmon.py**
+pi@raspberrypi ~/project-catmon $ sudo python catmon.py
 ```
 Catmon will continue to run until you tell it to stop using CTRL-C. By default it logs to *catmon.log* and *stdout*.
 
