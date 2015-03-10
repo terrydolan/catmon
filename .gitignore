@@ -1,0 +1,11 @@
+# ignore files holing tokens and secrets
+catmon.ini
+client_secrets.json
+keyfile.p12
+
+# ignore other non-project files
+*.pyc
+*.sh
+*.log*
+*.jpg
+*.tmp
