@@ -4,7 +4,7 @@ Catmon is a simple cat flap monitor application written in python. It takes a pi
 # Set-up
 ![](https://lh6.googleusercontent.com/-Qu-Tn-N6oao/VPs_fvNICHI/AAAAAAAAAE0/_0T2GnQsqpw/w916-h553-no/catmon%2Bsolution%2Boverview.jpg "Catmon Solution Overview")
 
-See [Terry's blog about catmon](http://terrydolan.blogspot.com/2015/03/catmon.html) for information on how to set-up and some of the learning along the way.
+See [Terry's blog about catmon](http://terrysmusings.blogspot.co.uk/2015/03/catmon.html) for information on how to set-up and some of the learning along the way.
 
 # Run catmon
 Catmon needs root privilege because it accesses the raspberry pi's gpio:
