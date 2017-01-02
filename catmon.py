@@ -24,6 +24,14 @@
     
 
     Author: Terry Dolan
+    Version: 3
+
+    History
+    v1, baseline
+    v2, change order of calls in update reed_switch_event_handler(),
+        tweet before uploading to gdrive
+    v3, change tweet text to use friendly event time,
+        increase resolution of pic
     
     References (just some of the sources that have helped with this project):
     GPIO interrupts: http://raspi.tv/2013/how-to-use-interrupts...
@@ -35,7 +43,10 @@
 
     To Do:
     Refactor as class to avoid use of globals?
-    Avoid taking picture when cat exits? Could use time taken to pass reed switch.
+    Avoid taking picture when cat exits? 
+     - Could use time taken to pass reed switch.
+     - or, Process picture to detect cat.
+     - or, Second switch.
     Use RFID reader to identify a chipped cat?
 """
 
@@ -80,25 +91,34 @@ def reed_switch_event_handler(switch_pin):
     global GDRIVE_ON
 
     # define constants
-    TWEET_BOILER_PLATE_TEXT = 'auto-tweet from catmon:'
+    TWEET_BOILER_PLATE_TEXT = 'Cat spotted at {}\nauto-tweet from catmon #cat #boo #simba #raspberrypi'
     # define a camera delay tuning parameter to ensure a good cat pic
-    CAM_DELAY = 0.47 # wait this many seconds before taking pic
-
+    CAM_DELAY = 0.52 # 0.47 # wait this many seconds before taking pic
 
     # log event handler start and event time
     logger.info('>event handler: started, switch on pin {} is {} -------'.format(switch_pin,
                                                                                  switch_status(switch_pin)))
     event_time = datetime.now()
-    logger.info('>event handler: new event at {}'.format(event_time))
+    friendly_event_time = event_time.strftime('%H:%M on %A %B %d %Y')
+    logger.info('>event handler: new event at {}'.format(friendly_event_time))
     
     # generate image filename and capture image using pi cam
     logger.info('>event handler: capturing image...')
-    image_file = datetime.now().strftime('%Y-%m-%d_%H%M%S') + '.jpg'
+    image_file = event_time.strftime('%Y-%m-%d_%H%M%S') + '.jpg'
     if CAM_DELAY > 0: # add the delay, if set 
         time.sleep(CAM_DELAY)
         camera.capture(image_file)
         logger.info('>event handler: pic taken {}'.format(image_file))
 
+    # tweet image with text
+    if TWEET_ON:
+        tweet_text = TWEET_BOILER_PLATE_TEXT.format(friendly_event_time)
+        logger.info('>event handler: {} tweeting {} (with image)...'.format(twitter_account_name,
+                                                                            tweet_text))
+        twitter_api.update_with_media(image_file, status=tweet_text)
+
+    logger.info('>event handler: complete, switch on pin {} is {} -------'.format(switch_pin,
+                                                                                  switch_status(switch_pin)))
     # upload image to gdrive
     if GDRIVE_ON:
         if gcredentials.access_token_expired:
@@ -112,17 +132,7 @@ def reed_switch_event_handler(switch_pin):
                                                         'id': gdrive_target_folder_id}]})
         this_file.SetContentFile(image_file) # Read file and set it as the content of this instance
         this_file.Upload()
-
-    # tweet image with text
-    if TWEET_ON:
-        tweet_text = '{} {}'.format(TWEET_BOILER_PLATE_TEXT, image_file)
-        logger.info('>event handler: {} tweeting {} (with image)...'.format(twitter_account_name,
-                                                                            tweet_text))
-        twitter_api.update_with_media(image_file, status=tweet_text)
-
-    logger.info('>event handler: complete, switch on pin {} is {} -------'.format(switch_pin,
-                                                                                  switch_status(switch_pin)))
-    
+        
     return
 
 
@@ -149,7 +159,7 @@ def main():
     REED_SWITCH_INPUT_PIN = 23 # selected gpio pin for reed switch input
     REED_SWITCH_BOUNCE_TIME = 400 # ignore switch activation for this many ms
     EVENT_GAP = 5 # ignore subsequent events for this many seconds after initial event
-    CAM_RESOLUTION = (640, 480) # default resolution of 2592 x 1944 is not required
+    CAM_RESOLUTION = (1280, 960) # default cam resolution of 2592 x 1944 is not required
     CAM_VFLIP = True # vertical flip set True as using camera module mount with tripod
     CAM_SHUTTER_SPEED = 16000 # default is ~32000, reduced to minimise blur
     CAM_BRIGHTNESS = 55 # default is 50, increased to compensate for increased shutter speed

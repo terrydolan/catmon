@@ -9,3 +9,6 @@ keyfile.p12
 *.log*
 *.jpg
 *.tmp
+
+# ignore archive
+archive/
