@@ -32,6 +32,7 @@
         tweet before uploading to gdrive
     v3, change tweet text to use friendly event time,
         increase resolution of pic
+        reduce CAM_DELAY to take account of changes to position of reed switch
     
     References (just some of the sources that have helped with this project):
     GPIO interrupts: http://raspi.tv/2013/how-to-use-interrupts...
@@ -43,11 +44,7 @@
 
     To Do:
     Refactor as class to avoid use of globals?
-    Avoid taking picture when cat exits? 
-     - Could use time taken to pass reed switch.
-     - or, Process picture to detect cat.
-     - or, Second switch.
-    Use RFID reader to identify a chipped cat?
+    Use RFID reader to identify which cat has entered or exited?
 """
 
 import RPi.GPIO as GPIO
@@ -93,7 +90,7 @@ def reed_switch_event_handler(switch_pin):
     # define constants
     TWEET_BOILER_PLATE_TEXT = 'Cat spotted at {}\nauto-tweet from catmon #cat #boo #simba #raspberrypi'
     # define a camera delay tuning parameter to ensure a good cat pic
-    CAM_DELAY = 0.52 # 0.47 # wait this many seconds before taking pic
+    CAM_DELAY = 0.38 # 0.47 # wait this many seconds before taking pic
 
     # log event handler start and event time
     logger.info('>event handler: started, switch on pin {} is {} -------'.format(switch_pin,
@@ -161,11 +158,11 @@ def main():
     EVENT_GAP = 5 # ignore subsequent events for this many seconds after initial event
     CAM_RESOLUTION = (1280, 960) # default cam resolution of 2592 x 1944 is not required
     CAM_VFLIP = True # vertical flip set True as using camera module mount with tripod
-    CAM_SHUTTER_SPEED = 16000 # default is ~32000, reduced to minimise blur
-    CAM_BRIGHTNESS = 55 # default is 50, increased to compensate for increased shutter speed
+    CAM_SHUTTER_SPEED = 14000 # 16000 # default is ~32000, reduced to minimise blur
+    CAM_BRIGHTNESS = 56 # default is 50, increased to compensate for increased shutter speed
     CAM_CONTRAST = 5 # default is 0, increased to compensate for increased brightness 
     GDRIVE_ON = True # True if update to google drive is on
-    TWEET_ON = True # True if tweeting is on on
+    TWEET_ON = True # True if tweeting is on
     
     # set up logging and log start
     logging.config.dictConfig(catmon_logger_config.dictLogConfig)
