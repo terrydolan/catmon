@@ -9,6 +9,8 @@ keyfile.p12
 *.log*
 *.jpg
 *.tmp
+scratch.ipynb
+.ipynb_checkpoints/
 
 # ignore archive
 archive/

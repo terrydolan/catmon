@@ -24,7 +24,7 @@
     
 
     Author: Terry Dolan
-    Version: 3
+    Version: 4
 
     History
     v1, baseline
@@ -33,6 +33,7 @@
     v3, change tweet text to use friendly event time,
         increase resolution of pic
         reduce CAM_DELAY to take account of changes to position of reed switch
+    v4, add function to provide the friendly event time, with oridinal
     
     References (just some of the sources that have helped with this project):
     GPIO interrupts: http://raspi.tv/2013/how-to-use-interrupts...
@@ -63,6 +64,36 @@ from pydrive.auth import GoogleAuth
 from pydrive.drive import GoogleDrive
 from configparser import ConfigParser
 
+
+def n_plus_suffix(n):
+    """Return 'n plus the suffix' ordinal for given integer n.
+    
+       e.g. 
+       n_plus_suffix(1) returns '1st' 
+       n_plus_suffix(2) returns '2nd'
+       # Ref: http://stackoverflow.com/questions/739241/date-ordinal-output
+    """
+    
+    if 10 <= n % 100 < 20:
+        return str(n) + 'th'
+    else:
+       return  str(n) + {1 : 'st', 2 : 'nd', 3 : 'rd'}.get(n % 10, "th")
+
+
+def get_friendly_event_time(event_time):
+    """Return the friendly event time of the given event_time.
+    
+       event_time is of type datetime
+    
+       For example, 
+       get_friendly_event_time(datetime.strptime('2017-02-11 15:58:03.136000', '%Y-%m-%d %H:%M:%S.%f'))
+       returns '15:58 on Saturday 11th February 2017'
+    """ 
+
+    return event_time.strftime('%H:%M on %A {} %B %Y')\
+                    .format(n_plus_suffix(int(datetime.now().strftime('%d'))))
+
+
 def secs_diff(newer_datetime, older_datetime):
     """Return difference in seconds between given datetimes."""
     return (newer_datetime - older_datetime).total_seconds()
@@ -90,13 +121,13 @@ def reed_switch_event_handler(switch_pin):
     # define constants
     TWEET_BOILER_PLATE_TEXT = 'Cat spotted at {}\nauto-tweet from catmon #cat #boo #simba #raspberrypi'
     # define a camera delay tuning parameter to ensure a good cat pic
-    CAM_DELAY = 0.38 # 0.47 # wait this many seconds before taking pic
+    CAM_DELAY = 0.36 # 0.47 # wait this many seconds before taking pic
 
     # log event handler start and event time
     logger.info('>event handler: started, switch on pin {} is {} -------'.format(switch_pin,
                                                                                  switch_status(switch_pin)))
     event_time = datetime.now()
-    friendly_event_time = event_time.strftime('%H:%M on %A %B %d %Y')
+    friendly_event_time = get_friendly_event_time(event_time)
     logger.info('>event handler: new event at {}'.format(friendly_event_time))
     
     # generate image filename and capture image using pi cam
@@ -158,9 +189,9 @@ def main():
     EVENT_GAP = 5 # ignore subsequent events for this many seconds after initial event
     CAM_RESOLUTION = (1280, 960) # default cam resolution of 2592 x 1944 is not required
     CAM_VFLIP = True # vertical flip set True as using camera module mount with tripod
-    CAM_SHUTTER_SPEED = 14000 # 16000 # default is ~32000, reduced to minimise blur
-    CAM_BRIGHTNESS = 56 # default is 50, increased to compensate for increased shutter speed
-    CAM_CONTRAST = 5 # default is 0, increased to compensate for increased brightness 
+    CAM_SHUTTER_SPEED = 12000 # 16000 # default is ~32000, reduced to minimise blur
+    CAM_BRIGHTNESS = 60 # 60 # 56 # default is 50, increased to compensate for increased shutter speed
+    CAM_CONTRAST = 20 # 100 # 5 # default is 0, increased to compensate for increased brightness 
     GDRIVE_ON = True # True if update to google drive is on
     TWEET_ON = True # True if tweeting is on
     
