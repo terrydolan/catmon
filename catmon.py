@@ -24,16 +24,6 @@
     
 
     Author: Terry Dolan
-    Version: 4
-
-    History
-    v1, baseline
-    v2, change order of calls in update reed_switch_event_handler(),
-        tweet before uploading to gdrive
-    v3, change tweet text to use friendly event time,
-        increase resolution of pic
-        reduce CAM_DELAY to take account of changes to position of reed switch
-    v4, add function to provide the friendly event time, with oridinal
     
     References (just some of the sources that have helped with this project):
     GPIO interrupts: http://raspi.tv/2013/how-to-use-interrupts...
@@ -45,7 +35,7 @@
 
     To Do:
     Refactor as class to avoid use of globals?
-    Use RFID reader to identify which cat has entered or exited?
+    Use RFID reader to identify a chipped cat?
 """
 
 import RPi.GPIO as GPIO
@@ -58,41 +48,11 @@ import time
 import logging
 import logging.config
 import catmon_logger_config # dict with catmon logger config
-from oauth2client.client import SignedJwtAssertionCredentials
+from oauth2client.service_account import ServiceAccountCredentials
 from datetime import datetime
 from pydrive.auth import GoogleAuth
 from pydrive.drive import GoogleDrive
 from configparser import ConfigParser
-
-
-def n_plus_suffix(n):
-    """Return 'n plus the suffix' ordinal for given integer n.
-    
-       e.g. 
-       n_plus_suffix(1) returns '1st' 
-       n_plus_suffix(2) returns '2nd'
-       # Ref: http://stackoverflow.com/questions/739241/date-ordinal-output
-    """
-    
-    if 10 <= n % 100 < 20:
-        return str(n) + 'th'
-    else:
-       return  str(n) + {1 : 'st', 2 : 'nd', 3 : 'rd'}.get(n % 10, "th")
-
-
-def get_friendly_event_time(event_time):
-    """Return the friendly event time of the given event_time.
-    
-       event_time is of type datetime
-    
-       For example, 
-       get_friendly_event_time(datetime.strptime('2017-02-11 15:58:03.136000', '%Y-%m-%d %H:%M:%S.%f'))
-       returns '15:58 on Saturday 11th February 2017'
-    """ 
-
-    return event_time.strftime('%H:%M on %A {} %B %Y')\
-                    .format(n_plus_suffix(int(datetime.now().strftime('%d'))))
-
 
 def secs_diff(newer_datetime, older_datetime):
     """Return difference in seconds between given datetimes."""
@@ -119,34 +79,25 @@ def reed_switch_event_handler(switch_pin):
     global GDRIVE_ON
 
     # define constants
-    TWEET_BOILER_PLATE_TEXT = 'Cat spotted at {}\nauto-tweet from catmon #cat #boo #simba #raspberrypi'
+    TWEET_BOILER_PLATE_TEXT = 'auto-tweet from catmon:'
     # define a camera delay tuning parameter to ensure a good cat pic
-    CAM_DELAY = 0.36 # 0.47 # wait this many seconds before taking pic
+    CAM_DELAY = 0.47 # wait this many seconds before taking pic
+
 
     # log event handler start and event time
     logger.info('>event handler: started, switch on pin {} is {} -------'.format(switch_pin,
                                                                                  switch_status(switch_pin)))
     event_time = datetime.now()
-    friendly_event_time = get_friendly_event_time(event_time)
-    logger.info('>event handler: new event at {}'.format(friendly_event_time))
+    logger.info('>event handler: new event at {}'.format(event_time))
     
     # generate image filename and capture image using pi cam
     logger.info('>event handler: capturing image...')
-    image_file = event_time.strftime('%Y-%m-%d_%H%M%S') + '.jpg'
+    image_file = datetime.now().strftime('%Y-%m-%d_%H%M%S') + '.jpg'
     if CAM_DELAY > 0: # add the delay, if set 
         time.sleep(CAM_DELAY)
         camera.capture(image_file)
         logger.info('>event handler: pic taken {}'.format(image_file))
 
-    # tweet image with text
-    if TWEET_ON:
-        tweet_text = TWEET_BOILER_PLATE_TEXT.format(friendly_event_time)
-        logger.info('>event handler: {} tweeting {} (with image)...'.format(twitter_account_name,
-                                                                            tweet_text))
-        twitter_api.update_with_media(image_file, status=tweet_text)
-
-    logger.info('>event handler: complete, switch on pin {} is {} -------'.format(switch_pin,
-                                                                                  switch_status(switch_pin)))
     # upload image to gdrive
     if GDRIVE_ON:
         if gcredentials.access_token_expired:
@@ -160,7 +111,17 @@ def reed_switch_event_handler(switch_pin):
                                                         'id': gdrive_target_folder_id}]})
         this_file.SetContentFile(image_file) # Read file and set it as the content of this instance
         this_file.Upload()
-        
+
+    # tweet image with text
+    if TWEET_ON:
+        tweet_text = '{} {}'.format(TWEET_BOILER_PLATE_TEXT, image_file)
+        logger.info('>event handler: {} tweeting {} (with image)...'.format(twitter_account_name,
+                                                                            tweet_text))
+        twitter_api.update_with_media(image_file, status=tweet_text)
+
+    logger.info('>event handler: complete, switch on pin {} is {} -------'.format(switch_pin,
+                                                                                  switch_status(switch_pin)))
+    
     return
 
 
@@ -187,13 +148,13 @@ def main():
     REED_SWITCH_INPUT_PIN = 23 # selected gpio pin for reed switch input
     REED_SWITCH_BOUNCE_TIME = 400 # ignore switch activation for this many ms
     EVENT_GAP = 5 # ignore subsequent events for this many seconds after initial event
-    CAM_RESOLUTION = (1280, 960) # default cam resolution of 2592 x 1944 is not required
+    CAM_RESOLUTION = (640, 480) # default resolution of 2592 x 1944 is not required
     CAM_VFLIP = True # vertical flip set True as using camera module mount with tripod
-    CAM_SHUTTER_SPEED = 12000 # 16000 # default is ~32000, reduced to minimise blur
-    CAM_BRIGHTNESS = 60 # 60 # 56 # default is 50, increased to compensate for increased shutter speed
-    CAM_CONTRAST = 20 # 100 # 5 # default is 0, increased to compensate for increased brightness 
+    CAM_SHUTTER_SPEED = 16000 # default is ~32000, reduced to minimise blur
+    CAM_BRIGHTNESS = 55 # default is 50, increased to compensate for increased shutter speed
+    CAM_CONTRAST = 5 # default is 0, increased to compensate for increased brightness 
     GDRIVE_ON = True # True if update to google drive is on
-    TWEET_ON = True # True if tweeting is on
+    TWEET_ON = True # True if tweeting is on on
     
     # set up logging and log start
     logging.config.dictConfig(catmon_logger_config.dictLogConfig)
@@ -213,7 +174,7 @@ def main():
     camera.vflip = CAM_VFLIP
     camera.shutter_speed = CAM_SHUTTER_SPEED
     camera.brightness = CAM_BRIGHTNESS
-    camera.constrast = CAM_CONTRAST
+    camera.contrast = CAM_CONTRAST
 
     # open the catmon config file and parse
     logger.info('open config file and parse...')
@@ -238,10 +199,9 @@ def main():
         gdrive_target_folder_id = cfg.get('gdrive', 'gdrive_target_folder_id')
 
         # set gdrive credentials and authenticate
-        svc_key = open(svc_key_file, 'rb').read() # p12 key for service
-        gcredentials = SignedJwtAssertionCredentials(svc_user_id, svc_key,
-                                                     scope=svc_scope)
-        gcredentials.authorize(httplib2.Http())
+        gcredentials = ServiceAccountCredentials.from_p12_keyfile(svc_user_id,
+						svc_key_file, scopes=svc_scope)
+	gcredentials.authorize(httplib2.Http())
         gauth = GoogleAuth()
         gauth.credentials = gcredentials
     else:

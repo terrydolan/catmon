@@ -9,6 +9,7 @@ keyfile.p12
 *.log*
 *.jpg
 *.tmp
+*.old
 scratch.ipynb
 .ipynb_checkpoints/
 
