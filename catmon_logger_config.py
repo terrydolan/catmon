@@ -3,13 +3,13 @@
 dictLogConfig = {
     'version': 1,
     'handlers': {
-        'basicHandler':{
+        'basicHandler': {
             'class': 'logging.FileHandler',
             'level': 'INFO',
             'formatter': 'myFileFormatter',
             'filename': 'catmon.log'
         },
-        'fileHandler':{
+        'fileHandler': {
             'class': 'logging.handlers.RotatingFileHandler',
             'level': 'INFO',
             'formatter': 'myFileFormatter',

@@ -1,17 +1,53 @@
+# non-project files to ignore
+*.bat
+*.ipynb
+*.jpg
+*.log*
+*.p
+*.pdf
+*.png
+*.pptx
+*.pyc
+*.pylintrc
+*.sh
+*.tmp
+*.txt
+*.xlsx
+tmp*.*
+*.old*
+*~*
+*.sav*
+*.zip
+Thumbs.db
+
 # ignore files holing tokens and secrets
 catmon.ini
 client_secrets.json
 keyfile.p12
 
-# ignore other non-project files
-*.pyc
-*.sh
-*.log*
-*.jpg
-*.tmp
-*.old
-scratch.ipynb
+# untracked test files
+test*.*
+
+# jupyter notebook and checkpoint files
 .ipynb_checkpoints/
 
-# ignore archive
-archive/
+# IDE, pycharm
+.idea/
+/.idea
+
+# archive and tmp folder files
+archive*/
+snapshot*/
+tmp*/
+*/tmp*.*
+*/tmp*/
+
+# ignore all catmonic files (available from github)
+catmonic*/*
+images/*
+
+# override
+!requirements.txt
+
+
+
